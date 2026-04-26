@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Smart Notice Board</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { margin:0; font-family: Arial; background:#eef2f7; }
+    .container { max-width:500px; margin:auto; padding:20px; }
+    h1 { text-align:center; }
+    .card {
+      background:#fff; padding:20px; border-radius:15px;
+      box-shadow:0 5px 15px rgba(0,0,0,0.1);
+    }
+    input {
+      width:100%; padding:12px; font-size:18px;
+      border-radius:10px; border:1px solid #ccc; margin-bottom:10px;
+      box-sizing:border-box;
+    }
+    .btn {
+      width:100%; padding:12px; margin-top:8px;
+      border:none; border-radius:10px; font-size:16px; cursor:pointer;
+    }
+    .send { background:#4CAF50; color:white; }
+    .mic { background:#2196F3; color:white; }
+    .alert { background:#f44336; color:white; }
+    .quick { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+    .quick button {
+      flex:1; padding:10px; border:none; border-radius:8px; background:#ddd;
+    }
+    .status { margin-top:10px; text-align:center; color:gray; }
+  </style>
+</head>
+
+<body>
+<div class="container">
+  <h1>📢 Smart Notice</h1>
+
+  <div class="card">
+    <input id="msg" placeholder="Type or speak message..."
+           oninput="this.value = this.value.toUpperCase()">
+
+    <button class="btn mic" onclick="startVoice()">🎤 Speak</button>
+    <button class="btn send" onclick="sendMsg()">Send</button>
+    <button class="btn alert" onclick="sendEmergency()">🚨 Emergency</button>
+
+    <div class="quick">
+      <button onclick="quickMsg('ROBOTICS TEACHER COME TO LAB')">Robotics</button>
+      <button onclick="quickMsg('MATH TEACHER COME TO OFFICE')">Math</button>
+      <button onclick="quickMsg('MEETING IN STAFF ROOM')">Meeting</button>
+    </div>
+
+    <div class="status" id="status">Status: Ready</div>
+  </div>
+</div>
+
+<script>
+  const ESP_IP = "10.86.122.173"; // 🔁 CHANGE THIS
+
+  function sendMsg() {
+    let text = document.getElementById("msg").value.toUpperCase();
+    if (text.trim() === "") return;
+
+    fetch(`http://${ESP_IP}/send?msg=` + encodeURIComponent(text))
+      .then(res => res.text())
+      .then(() => {
+        document.getElementById("status").innerText = "✔ Delivered to Display";
+      })
+      .catch(() => {
+        // Even if browser complains, ESP may still have received it
+        document.getElementById("status").innerText = "⚠ Sent (no response)";
+      });
+  }
+
+  function sendEmergency() {
+    const text = "EMERGENCY! COME IMMEDIATELY";
+    fetch(`http://${ESP_IP}/send?msg=` + encodeURIComponent(text))
+      .then(() => {
+        document.getElementById("status").innerText = "🚨 Emergency Sent!";
+      });
+  }
+
+  function quickMsg(text) {
+    document.getElementById("msg").value = text;
+    sendMsg();
+  }
+
+  function startVoice() {
+    const recognition = new webkitSpeechRecognition();
+    recognition.lang = "en-IN";
+    recognition.onresult = function(event) {
+      const text = event.results[0][0].transcript.toUpperCase();
+      document.getElementById("msg").value = text;
+      sendMsg();
+    };
+    recognition.start();
+  }
+</script>
+</body>
+</html>
